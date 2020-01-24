@@ -28,22 +28,19 @@ if [[ "${BUILDKITE_PLUGIN_HANGOUTS_CHAT_COMMIT_SUMMARY_ENABLED:-false}" =~ (true
     SUMMARY_LOG=$(commit_summary "$BK_FROM_COMMIT" "$BK_TO_COMMIT")
 
     MESSAGE="${MESSAGE} ${SUMMARY_LOG}"
-    ROWS="${ROWS}"
 fi
 
 CURRENT_COMMIT=$(git rev-parse HEAD)
 THREAD_KEY=${BUILDKITE_PLUGIN_HANGOUTS_CHAT_THREAD_KEY:=$CURRENT_COMMIT}
 
-COUNT=0
 CARDS="none"
 
-IFS=, read -r CARD_TITLE CARD_SUBTITLE BUILD_URL <<< "$CARD_DETAILS"
+IFS=| read -r CARD_TITLE CARD_SUBTITLE BUILD_URL <<< "$CARD_DETAILS"
 
 IFS=';' read -ra DEETS <<< "$ROWS"
 for i in "${DEETS[@]}"; do
-    IFS=, read -r ROW_TITLE ROW_INFO ROW_URL <<< "$i"
-    CARD_ROWS[$COUNT]='{ "keyValue":{ "topLabel":"'"$ROW_TITLE"'","content":"'"$ROW_INFO"'","button":{ "textButton":{ "text":"OPEN REPORT","onClick":{ "openLink":{ "url":"'"$ROW_URL"'"}}}}}}'
-    COUNT=$COUNT+1
+    IFS=| read -r ROW_TITLE ROW_INFO ROW_URL <<< "$i"
+    CARD_ROWS+=('{ "keyValue":{ "topLabel":"'"$ROW_TITLE"'","content":"'"$ROW_INFO"'","button":{ "textButton":{ "text":"OPEN REPORT","onClick":{ "openLink":{ "url":"'"$ROW_URL"'"}}}}}}')
 done
 
 for c in "${CARD_ROWS[@]}"; do
@@ -55,14 +52,14 @@ for c in "${CARD_ROWS[@]}"; do
   fi
 done
 
-SEND='{"cards":[{"header":{"title":"'"$CARD_TITLE"'","subtitle":"'"$CARD_SUBTITLE"'","imageUrl":"https://mma.prnewswire.com/media/997422/Rokt_RGB_Black_Logo.jpg?p=twitter"},"sections":[{"widgets":['"$CARDS"']},{"widgets":[{"buttons":[{"textButton":{"text":"GO TO BUILD","onClick":{"openLink":{"url":"'"$BUILD_URL"'"}}}}]}]}]}]}'
+HANGOUTS_CARD_JSON='{"cards":[{"header":{"title":"'"$CARD_TITLE"'","subtitle":"'"$CARD_SUBTITLE"'","imageUrl":"https://mma.prnewswire.com/media/997422/Rokt_RGB_Black_Logo.jpg?p=twitter"},"sections":[{"widgets":['"$CARDS"']},{"widgets":[{"buttons":[{"textButton":{"text":"GO TO BUILD","onClick":{"openLink":{"url":"'"$BUILD_URL"'"}}}}]}]}]}]}'
 
 
 if [ $TYPE == 'CARD' ]
 then
   curl -v --location --request POST "${WEBHOOK_URL}" \
   -H 'Content-Type: application/json' \
-  -d ' '"${SEND}"' '
+  -d ' '"${HANGOUTS_CARD_JSON}"' '
 
 else
   curl -v -X "POST" "${CHAT_URL}" \
