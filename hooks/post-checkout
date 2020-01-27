@@ -33,26 +33,28 @@ fi
 CURRENT_COMMIT=$(git rev-parse HEAD)
 THREAD_KEY=${BUILDKITE_PLUGIN_HANGOUTS_CHAT_THREAD_KEY:=$CURRENT_COMMIT}
 
-CARDS="none"
+KEYVALUE_JSON="none"
 
 IFS=| read -r CARD_TITLE CARD_SUBTITLE BUILD_URL <<< "$CARD_DETAILS"
 
-IFS=';' read -ra DEETS <<< "$ROWS"
-for i in "${DEETS[@]}"; do
+# Create a list of JSON objects to display the rows in the hangouts card
+IFS=';' read -ra DETAILS <<< "$ROWS"
+for i in "${DETAILS[@]}"; do
     IFS=| read -r ROW_TITLE ROW_INFO ROW_URL <<< "$i"
-    CARD_ROWS+=('{ "keyValue":{ "topLabel":"'"$ROW_TITLE"'","content":"'"$ROW_INFO"'","button":{ "textButton":{ "text":"OPEN REPORT","onClick":{ "openLink":{ "url":"'"$ROW_URL"'"}}}}}}')
+    KEYVALUE_LIST+=('{ "keyValue":{ "topLabel":"'"$ROW_TITLE"'","content":"'"$ROW_INFO"'","button":{ "textButton":{ "text":"OPEN REPORT","onClick":{ "openLink":{ "url":"'"$ROW_URL"'"}}}}}}')
 done
 
-for c in "${CARD_ROWS[@]}"; do
-  if [ $CARDS = "none" ]
+for c in "${KEYVALUE_LIST[@]}"; do
+  if [ $KEYVALUE_JSON = "none" ]
   then
-    CARDS=$c
+    KEYVALUE_JSON=$c
   else
-    CARDS=$CARDS,$c
+    KEYVALUE_JSON=$KEYVALUE_JSON,$c
   fi
 done
 
-HANGOUTS_CARD_JSON='{"cards":[{"header":{"title":"'"$CARD_TITLE"'","subtitle":"'"$CARD_SUBTITLE"'","imageUrl":"https://mma.prnewswire.com/media/997422/Rokt_RGB_Black_Logo.jpg?p=twitter"},"sections":[{"widgets":['"$CARDS"']},{"widgets":[{"buttons":[{"textButton":{"text":"GO TO BUILD","onClick":{"openLink":{"url":"'"$BUILD_URL"'"}}}}]}]}]}]}'
+# Putting the JSON card together for hangouts
+HANGOUTS_CARD_JSON='{"cards":[{"header":{"title":"'"$CARD_TITLE"'","subtitle":"'"$CARD_SUBTITLE"'"},"sections":[{"widgets":['"$KEYVALUE_JSON"']},{"widgets":[{"buttons":[{"textButton":{"text":"GO TO BUILD","onClick":{"openLink":{"url":"'"$BUILD_URL"'"}}}}]}]}]}]}'
 
 
 if [ $TYPE == 'CARD' ]
