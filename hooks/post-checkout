@@ -34,7 +34,7 @@ CURRENT_COMMIT=$(git rev-parse HEAD)
 THREAD_KEY=${BUILDKITE_PLUGIN_HANGOUTS_CHAT_THREAD_KEY:=$CURRENT_COMMIT}
 
 COUNT="0"
-CARDS="none"
+CARDS_JSON="none"
 
 IFS=, read -r CARD_TITLE CARD_SUBTITLE BUILD_URL <<< "$CARD_DETAILS"
 
@@ -46,17 +46,17 @@ for i in "${DETAILS[@]}"; do
     COUNT=$COUNT+1
 done
 
-for c in "${KEYVALUE_LIST[@]}"; do
-  if [ $KEYVALUE_JSON = "none" ]
+for c in "${CARD_ROWS[@]}"; do
+  if [ $CARDS_JSON = "none" ]
   then
-    KEYVALUE_JSON=$c
+    CARDS_JSON=$c
   else
-    KEYVALUE_JSON=$KEYVALUE_JSON,$c
+    CARDS_JSON=$CARDS_JSON,$c
   fi
 done
 
 # Putting the JSON card together for hangouts
-HANGOUTS_CARD_JSON='{"cards":[{"header":{"title":"'"$CARD_TITLE"'","subtitle":"'"$CARD_SUBTITLE"'"},"sections":[{"widgets":['"$KEYVALUE_JSON"']},{"widgets":[{"buttons":[{"textButton":{"text":"GO TO BUILD","onClick":{"openLink":{"url":"'"$BUILD_URL"'"}}}}]}]}]}]}'
+HANGOUTS_CARD_JSON='{"cards":[{"header":{"title":"'"$CARD_TITLE"'","subtitle":"'"$CARD_SUBTITLE"'"},"sections":[{"widgets":['"$CARDS_JSON"']},{"widgets":[{"buttons":[{"textButton":{"text":"GO TO BUILD","onClick":{"openLink":{"url":"'"$BUILD_URL"'"}}}}]}]}]}]}'
 
 
 if [ $TYPE == 'CARD' ]
