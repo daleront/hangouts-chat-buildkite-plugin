@@ -33,7 +33,8 @@ fi
 CURRENT_COMMIT=$(git rev-parse HEAD)
 THREAD_KEY=${BUILDKITE_PLUGIN_HANGOUTS_CHAT_THREAD_KEY:=$CURRENT_COMMIT}
 
-KEYVALUE_JSON="none"
+COUNT="0"
+CARDS="none"
 
 IFS=, read -r CARD_TITLE CARD_SUBTITLE BUILD_URL <<< "$CARD_DETAILS"
 
@@ -41,7 +42,8 @@ IFS=, read -r CARD_TITLE CARD_SUBTITLE BUILD_URL <<< "$CARD_DETAILS"
 IFS=';' read -ra DETAILS <<< "$ROWS"
 for i in "${DETAILS[@]}"; do
     IFS=, read -r ROW_TITLE ROW_INFO ROW_URL <<< "$i"
-    KEYVALUE_LIST+=('{ "keyValue":{ "topLabel":"'"$ROW_TITLE"'","content":"'"$ROW_INFO"'","button":{ "textButton":{ "text":"OPEN REPORT","onClick":{ "openLink":{ "url":"'"$ROW_URL"'"}}}}}}')
+    CARD_ROWS[$COUNT]='{ "keyValue":{ "topLabel":"'"$ROW_TITLE"'","content":"'"$ROW_INFO"'","button":{ "textButton":{ "text":"OPEN REPORT","onClick":{ "openLink":{ "url":"'"$ROW_URL"'"}}}}}}'
+    COUNT=$COUNT+1
 done
 
 for c in "${KEYVALUE_LIST[@]}"; do
