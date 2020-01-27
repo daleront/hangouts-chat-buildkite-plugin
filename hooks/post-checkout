@@ -35,12 +35,12 @@ THREAD_KEY=${BUILDKITE_PLUGIN_HANGOUTS_CHAT_THREAD_KEY:=$CURRENT_COMMIT}
 
 KEYVALUE_JSON="none"
 
-IFS=| read -r CARD_TITLE CARD_SUBTITLE BUILD_URL <<< "$CARD_DETAILS"
+IFS=, read -r CARD_TITLE CARD_SUBTITLE BUILD_URL <<< "$CARD_DETAILS"
 
 # Create a list of JSON objects to display the rows in the hangouts card
 IFS=';' read -ra DETAILS <<< "$ROWS"
 for i in "${DETAILS[@]}"; do
-    IFS=| read -r ROW_TITLE ROW_INFO ROW_URL <<< "$i"
+    IFS=, read -r ROW_TITLE ROW_INFO ROW_URL <<< "$i"
     KEYVALUE_LIST+=('{ "keyValue":{ "topLabel":"'"$ROW_TITLE"'","content":"'"$ROW_INFO"'","button":{ "textButton":{ "text":"OPEN REPORT","onClick":{ "openLink":{ "url":"'"$ROW_URL"'"}}}}}}')
 done
 
