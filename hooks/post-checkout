@@ -50,12 +50,12 @@ if [ $TYPE == 'CARD' ]
   for i in "${DETAILS[@]}"; do
       IFS=, read -r ROW_TITLE ROW_INFO ROW_URL <<< "$i"
       if [ $ROW_INFO == "Failed" ]; then FAIL=1; fi
-      CARD_ROWS[$COUNT]='{ "keyValue":{ "topLabel":"'"$ROW_TITLE"'","content":"'"$ROW_INFO"'","button":{ "textButton":{ "text":"OPEN REPORT","onClick":{ "openLink":{ "url":"'"$ROW_URL"'"}}}}}}'
-      COUNT=$COUNT+1
-  done
-
-  for c in "${CARD_ROWS[@]}"; do
-    if [ $CARDS_JSON == "none" ]; then CARDS_JSON=$c; else CARDS_JSON=$CARDS_JSON,$c; fi
+      if [ $CARDS_JSON == "none" ]
+          then
+            CARDS_JSON='{ "keyValue":{ "topLabel":"'"$ROW_TITLE"'","content":"'"$ROW_INFO"'","button":{ "textButton":{ "text":"OPEN REPORT","onClick":{ "openLink":{ "url":"'"$ROW_URL"'"}}}}}}'
+          else
+            CARDS_JSON=$CARDS_JSON,'{ "keyValue":{ "topLabel":"'"$ROW_TITLE"'","content":"'"$ROW_INFO"'","button":{ "textButton":{ "text":"OPEN REPORT","onClick":{ "openLink":{ "url":"'"$ROW_URL"'"}}}}}}'
+          fi
   done
 
   # Putting the JSON card together for hangouts
