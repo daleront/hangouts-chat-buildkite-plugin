@@ -11,6 +11,10 @@ echo "--- Sending Hangouts Message"
 WEBHOOK_URL="${BUILDKITE_PLUGIN_HANGOUTS_CHAT_WEBHOOK_URL?}"
 CHAT_URL=${BUILDKITE_PLUGIN_HANGOUTS_CHAT_CHAT_ENDPOINT?}
 MESSAGE=$(echo "${BUILDKITE_PLUGIN_HANGOUTS_CHAT_MESSAGE?}" | envsubst)
+WEBHOOK_URL2="${BUILDKITE_PLUGIN_HANGOUTS_CHAT_WEBHOOK_URL2?}"
+WEBHOOK_KEY="${BUILDKITE_PLUGIN_HANGOUTS_CHAT_WEBHOOK_KEY?}"
+USERTOKEN_FAIL="${BUILDKITE_PLUGIN_HANGOUTS_CHAT_USERTOKEN_FAIL?}"
+USERTOKEN_PASS="${BUILDKITE_PLUGIN_HANGOUTS_CHAT_USERTOKEN_PASS?}"
 TYPE=${BUILDKITE_PLUGIN_HANGOUTS_CHAT_TYPE}
 CARD_DETAILS=${BUILDKITE_PLUGIN_HANGOUTS_CHAT_CARD_DETAILS}
 ROWS=$(echo "${BUILDKITE_PLUGIN_HANGOUTS_CHAT_ROWS?}" | envsubst)
@@ -33,7 +37,7 @@ fi
 CURRENT_COMMIT=$(git rev-parse HEAD)
 THREAD_KEY=${BUILDKITE_PLUGIN_HANGOUTS_CHAT_THREAD_KEY:=$CURRENT_COMMIT}
 
-COUNT="0"
+FAIL=0
 CARDS_JSON="none"
 
 IFS=, read -r CARD_TITLE CARD_SUBTITLE BUILD_URL <<< "$CARD_DETAILS"
@@ -42,24 +46,25 @@ IFS=, read -r CARD_TITLE CARD_SUBTITLE BUILD_URL <<< "$CARD_DETAILS"
 IFS=';' read -ra DETAILS <<< "$ROWS"
 for i in "${DETAILS[@]}"; do
     IFS=, read -r ROW_TITLE ROW_INFO ROW_URL <<< "$i"
+    if [ $ROW_INFO == "Failed" ]; then FAIL=1; fi
     CARD_ROWS[$COUNT]='{ "keyValue":{ "topLabel":"'"$ROW_TITLE"'","content":"'"$ROW_INFO"'","button":{ "textButton":{ "text":"OPEN REPORT","onClick":{ "openLink":{ "url":"'"$ROW_URL"'"}}}}}}'
     COUNT=$COUNT+1
 done
 
 for c in "${CARD_ROWS[@]}"; do
-  if [ $CARDS_JSON = "none" ]
-  then
-    CARDS_JSON=$c
-  else
-    CARDS_JSON=$CARDS_JSON,$c
-  fi
+  if [ $CARDS_JSON == "none" ]; then CARDS_JSON=$c; else CARDS_JSON=$CARDS_JSON,$c; fi
 done
 
 # Putting the JSON card together for hangouts
 HANGOUTS_CARD_JSON='{"cards":[{"header":{"title":"'"$CARD_TITLE"'","subtitle":"'"$CARD_SUBTITLE"'"},"sections":[{"widgets":['"$CARDS_JSON"']},{"widgets":[{"buttons":[{"textButton":{"text":"GO TO BUILD","onClick":{"openLink":{"url":"'"$BUILD_URL"'"}}}}]}]}]}]}'
 
-
 if [ $TYPE == 'CARD' ]
+  if [ $FAIL == 1 ]
+    then
+      WEBHOOK_URL="${WEBHOOK_URL2}key=${WEBHOOK_KEY}&token=${USERTOKEN_FAIL}"
+    else
+      WEBHOOK_URL="${WEBHOOK_URL2}key=${WEBHOOK_KEY}&token=${USERTOKEN_PASS}"
+    fi
 then
   curl -v --location --request POST "${WEBHOOK_URL}" \
   -H 'Content-Type: application/json' \
